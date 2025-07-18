@@ -6,6 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UtilisateurModule } from './utilisateur/utilisateur.module';
 import { AuthModule } from './auth/auth.module';
 import { ServiceModule } from './service/service.module';
+import { CalendrierModule } from './calendrier/calendrier.module';
+import { RendezvousModule } from './rendezvous/rendezvous.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -23,6 +25,8 @@ import { ServiceModule } from './service/service.module';
     UtilisateurModule,
     AuthModule,
     ServiceModule,
+    CalendrierModule,
+    RendezvousModule,
       
   ],
   controllers: [AppController],

@@ -6,6 +6,7 @@ import { Service as ServiceEntity } from '../entities/service.entity';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { Utilisateur } from '../entities/utilisateur.entity';
 import { UpdateServiceDto } from './dto/update-service.dto';
+import { start } from 'repl';
 
 @Injectable()
 export class ServiceService {
@@ -22,9 +23,11 @@ export class ServiceService {
       where: { id: prestataireId },
     });
     if (!prestataire) {
-      throw new NotFoundException(`Prestataire with id ${prestataireId} not found`);
+      throw new NotFoundException(
+        `Prestataire with id ${prestataireId} not found`,
+      );
     }
-
+    console.log('testconsole', prestataire);
     const service = this.serviceRepo.create({
       ...dto,
       prestataire,
@@ -68,12 +71,11 @@ export class ServiceService {
     return this.serviceRepo.remove(service);
   }
   async findOne(id: string) {
-  const service = await this.serviceRepo.findOne({
-    where: { id },
-    relations: ['prestataire'],
-  });
-  if (!service) throw new NotFoundException('Service non trouvé');
-  return service;
-}
-
+    const service = await this.serviceRepo.findOne({
+      where: { id },
+      relations: ['prestataire'],
+    });
+    if (!service) throw new NotFoundException('Service non trouvé');
+    return service;
+  }
 }

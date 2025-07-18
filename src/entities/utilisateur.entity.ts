@@ -1,6 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 
-import { Service } from '../entities/service.entity'; // 👈 Assure-toi que le chemin est correct
+import { Service } from '../entities/service.entity'; 
+import { Calendrier } from './Calendrier.entity';
+import { RendezVous } from './rendezvous.entity';
 export enum Role {
   CLIENT = 'client',
   PRESTATAIRE = 'prestataire',
@@ -39,4 +41,16 @@ export class Utilisateur {
 
   @OneToMany(() => Service, (service) => service.prestataire)
   services: Service[];
+
+  // Prestataire : indisponibilités + rdv liés
+  @OneToMany(() => Calendrier, (calendrier) => calendrier.prestataire)
+  calendrier: Calendrier[];
+
+  // Client : rdvs pris
+  @OneToMany(() => RendezVous, (rdv) => rdv.client)
+  rendezVousClient: RendezVous[];
+
+  // Prestataire : rdvs reçus
+  @OneToMany(() => RendezVous, (rdv) => rdv.prestataire)
+  rendezVousPrestataire: RendezVous[];
 }
