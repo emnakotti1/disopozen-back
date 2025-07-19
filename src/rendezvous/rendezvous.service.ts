@@ -206,7 +206,7 @@ export class RendezVousService {
     }
 
     if (rdv.calendrier) {
-      await this.calendrierRepo.remove(rdv.calendrier);
+      await this.calendrierRepo.delete(rdv.calendrier.id);
       rdv.calendrier = null;
     } else {
     }
