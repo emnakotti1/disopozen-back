@@ -1,0 +1,58 @@
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+
+import { Service } from './service.entity';
+import { Calendar } from './Calendar.entity';
+import { Appointment } from './appointment.entity';
+
+export enum Role {
+  CLIENT = 'client',
+  PROVIDER = 'provider',
+  SUPERADMIN = 'superadmin',
+}
+
+@Entity('users')
+export class User {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  lastName: string;
+
+  @Column()
+  firstName: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @Column()
+  password: string;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  registrationDate: Date;
+
+  @Column({ default: 'local' }) // or 'google'
+  provider: string;
+
+  @Column({
+    type: 'enum',
+    enum: Role,
+    default: Role.CLIENT,
+  })
+  role: Role;
+
+  // Services offered by the provider
+  @OneToMany(() => Service, (service) => service.provider)
+  services: Service[];
+
+  // Provider: calendar/availability entries
+  @OneToMany(() => Calendar, (calendar) => calendar.provider)
+  calendars: Calendar[];
+
+  // Client: appointments made
+  @OneToMany(() => Appointment, (appointment) => appointment.client)
+  clientAppointments: Appointment[];
+
+  // Provider: appointments received
+  @OneToMany(() => Appointment, (appointment) => appointment.provider)
+  providerAppointments: Appointment[];
+}

@@ -2,9 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Service as ServiceEntity } from '../entities/service.entity';
-
 import { CreateServiceDto } from './dto/create-service.dto';
-import { Utilisateur } from '../entities/utilisateur.entity';
+import { User } from '../entities/user.entity';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { start } from 'repl';
 
@@ -14,37 +13,37 @@ export class ServiceService {
     @InjectRepository(ServiceEntity)
     private serviceRepo: Repository<ServiceEntity>,
 
-    @InjectRepository(Utilisateur)
-    private userRepo: Repository<Utilisateur>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
   ) {}
 
   async create(dto: CreateServiceDto, prestataireId: string) {
-    const prestataire = await this.userRepo.findOne({
+    const provider = await this.userRepo.findOne({
       where: { id: prestataireId },
     });
-    if (!prestataire) {
+    if (!provider) {
       throw new NotFoundException(
         `Prestataire with id ${prestataireId} not found`,
       );
     }
-    console.log('testconsole', prestataire);
+    console.log('testconsole', provider);
     const service = this.serviceRepo.create({
       ...dto,
-      prestataire,
+      provider,
     });
 
     return this.serviceRepo.save(service);
   }
 
   async findAll() {
-    return this.serviceRepo.find({ relations: ['prestataire'] });
+    return this.serviceRepo.find({ relations: ['provider'] });
   }
 
   async findByPrestataire(prestataireId: string) {
     return this.serviceRepo
       .createQueryBuilder('service')
-      .leftJoinAndSelect('service.prestataire', 'prestataire')
-      .where('prestataire.id = :id', { id: prestataireId })
+      .leftJoinAndSelect('service.provider', 'provider')
+      .where('provider.id = :id', { id: prestataireId })
       .getMany();
   }
 
@@ -73,7 +72,7 @@ export class ServiceService {
   async findOne(id: string) {
     const service = await this.serviceRepo.findOne({
       where: { id },
-      relations: ['prestataire'],
+      relations: ['provider'],
     });
     if (!service) throw new NotFoundException('Service non trouvé');
     return service;

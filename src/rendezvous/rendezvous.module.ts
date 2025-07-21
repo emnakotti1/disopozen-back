@@ -1,20 +1,15 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RendezVous } from '../entities/rendezvous.entity';
-import { Utilisateur } from '../entities/utilisateur.entity';
+import { Appointment } from '../entities/appointment.entity';
+import { User } from '../entities/user.entity';
 import { Service } from '../entities/service.entity';
-import { Calendrier } from '../entities/Calendrier.entity';
+import { Calendar } from '../entities/Calendar.entity';
 import { RendezVousController } from './rendezvous.controller';
 import { RendezVousService } from './rendezvous.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      RendezVous,
-      Utilisateur,
-      Service,
-      Calendrier,
-    ]),
+    TypeOrmModule.forFeature([Appointment, User, Service, Calendar]),
   ],
   controllers: [RendezVousController],
   providers: [RendezVousService],

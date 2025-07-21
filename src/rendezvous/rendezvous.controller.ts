@@ -9,7 +9,7 @@ import {
   Param,
 } from '@nestjs/common';
 import { RendezVousService } from './rendezvous.service';
-import { CreateRendezVousDto } from './dto/create-rendezvous.dto';
+import { CreateAppointmentDto } from './dto/create-rendezvous.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('rendezvous')
@@ -34,7 +34,7 @@ export class RendezVousController {
   }
 
   @Patch(':id')
-  async modifier(@Param('id') id: string, @Body() dto: CreateRendezVousDto) {
+  async modifier(@Param('id') id: string, @Body() dto: CreateAppointmentDto) {
     return this.rendezVousService.modifierRendezVous(id, dto);
   }
 

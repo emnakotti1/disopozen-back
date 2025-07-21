@@ -6,93 +6,91 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RendezVous, RdvStatut } from '../entities/rendezvous.entity';
-import { CreateRendezVousDto } from './dto/create-rendezvous.dto';
-import { Utilisateur } from '../entities/utilisateur.entity';
+import { Appointment, AppointmentStatus } from '../entities/appointment.entity';
+import { CreateAppointmentDto } from './dto/create-rendezvous.dto';
+import { User } from '../entities/user.entity';
 import { Service } from '../entities/service.entity';
-import { Calendrier, CalendrierType } from '../entities/Calendrier.entity';
+import { Calendar, CalendarType } from '../entities/Calendar.entity';
 
 @Injectable()
 export class RendezVousService {
   constructor(
-    @InjectRepository(RendezVous)
-    private readonly rdvRepo: Repository<RendezVous>,
+    @InjectRepository(Appointment)
+    private readonly rdvRepo: Repository<Appointment>,
 
-    @InjectRepository(Utilisateur)
-    private readonly userRepo: Repository<Utilisateur>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
 
     @InjectRepository(Service)
     private readonly serviceRepo: Repository<Service>,
 
-    @InjectRepository(Calendrier)
-    private readonly calendrierRepo: Repository<Calendrier>,
+    @InjectRepository(Calendar)
+    private readonly calendrierRepo: Repository<Calendar>,
   ) {}
 
   async prendreRendezVous(dto: any, clientId: string) {
-    console.log('tessst', dto);
-    const client = await this.userRepo.findOne({ where: { id: clientId } });
-    console.log('client', client);
-    const prestataire = await this.userRepo.findOne({
-      where: { id: dto.prestataireId },
-    });
-    console.log('perstataire');
-    const service = await this.serviceRepo.findOne({
-      where: { id: dto.serviceId },
-    });
+  console.log('dto', dto);
 
-    if (!client || !prestataire || !service) {
-      throw new NotFoundException('Client, prestataire ou service non trouvé.');
-    }
+  const client = await this.userRepo.findOne({ where: { id: clientId } });
+  const provider = await this.userRepo.findOne({
+    where: { id: dto.providerId },
+  });
+  const service = await this.serviceRepo.findOne({
+    where: { id: dto.serviceId },
+  });
 
-    // Calcul de l'heure de fin
-    const start = new Date(`1970-01-01T${dto.heureDebut}:00`);
-    console.log('start', start);
-    console.log('heureservice', service.duree);
-    const end = new Date(start.getTime() + service.duree * 60000);
-    const heureFin = end.toTimeString().slice(0, 5);
-    console.log('heurefintest', heureFin);
-    // Vérification des conflits
-    const conflits = await this.calendrierRepo
-      .createQueryBuilder('calendrier')
-      .leftJoin('calendrier.prestataire', 'prestataire')
-      .where('prestataire.id = :prestataireId', {
-        prestataireId: dto.prestataireId,
-      })
-      .andWhere('calendrier.date = :date', { date: dto.date })
-      .andWhere(
-        '(calendrier.heureDebut < :heureFin AND calendrier.heureFin > :heureDebut)',
-        {
-          heureDebut: dto.heureDebut,
-          heureFin: heureFin,
-        },
-      )
-      .getOne();
-
-    if (conflits) {
-      throw new ConflictException(
-        'Ce créneau est déjà réservé ou indisponible.',
-      );
-    }
-
-    const calendrier = this.calendrierRepo.create({
-      date: dto.date,
-      heureDebut: dto.heureDebut,
-      heureFin,
-      type: CalendrierType.RDV_CLIENT,
-      prestataire,
-      service,
-    });
-    await this.calendrierRepo.save(calendrier);
-    console.log('calendrier', calendrier);
-    const rdv = this.rdvRepo.create({
-      client,
-      prestataire,
-      service,
-      calendrier,
-    });
-
-    return this.rdvRepo.save(rdv);
+  if (!client || !provider || !service) {
+    throw new NotFoundException('Client, provider or service not found.');
   }
+
+  // Calculate end time based on service duration
+  const start = new Date(`1970-01-01T${dto.startTime}:00`);
+  const end = new Date(start.getTime() + service.duration * 60000);
+  const endTime = end.toTimeString().slice(0, 5); // 'HH:MM' format
+
+  // Check for conflicting calendar entries
+  const conflict = await this.calendrierRepo
+    .createQueryBuilder('calendar')
+    .leftJoin('calendar.provider', 'provider')
+    .where('provider.id = :providerId', { providerId: dto.providerId })
+    .andWhere('calendar.date = :date', { date: dto.date })
+    .andWhere(
+      '(calendar.startTime < :endTime AND calendar.endTime > :startTime)',
+      {
+        startTime: dto.startTime,
+        endTime: endTime,
+      },
+    )
+    .getOne();
+
+  if (conflict) {
+    throw new ConflictException(
+      'This time slot is already booked or unavailable.',
+    );
+  }
+
+  // Create calendar entry
+  const calendar = this.calendrierRepo.create({
+    date: dto.date,
+    startTime: dto.startTime,
+    endTime,
+    type: CalendarType.CLIENT_APPOINTMENT,
+    provider,
+    service,
+  });
+  await this.calendrierRepo.save(calendar);
+
+  // Create appointment
+  const appointment = this.rdvRepo.create({
+    client,
+    provider,
+    service,
+    calendar,
+  });
+
+  return this.rdvRepo.save(appointment);
+}
+
 
   async getRdvClient(clientId: string) {
     return this.rdvRepo.find({
@@ -104,13 +102,13 @@ export class RendezVousService {
 
   async getRdvPrestataire(prestataireId: string) {
     return this.rdvRepo.find({
-      where: { prestataire: { id: prestataireId } },
+      where: { provider: { id: prestataireId } },
       relations: ['client', 'service'],
       order: { createdAt: 'DESC' },
     });
   }
 
-  async modifierRendezVous(id: string, dto: CreateRendezVousDto) {
+  async modifierRendezVous(id: string, dto: CreateAppointmentDto) {
     const rdv = await this.rdvRepo.findOne({
       where: { id },
       relations: ['client', 'prestataire', 'service', 'calendrier'],
@@ -120,12 +118,12 @@ export class RendezVousService {
       throw new NotFoundException('Rendez-vous non trouvé');
     }
 
-    if (!rdv.calendrier) {
+    if (!rdv.calendar) {
       throw new NotFoundException('Calendrier du rendez-vous non trouvé');
     }
 
     const prestataire = await this.userRepo.findOne({
-      where: { id: dto.prestataireId },
+      where: { id: dto.providerId },
     });
     const service = await this.serviceRepo.findOne({
       where: { id: dto.serviceId },
@@ -136,8 +134,8 @@ export class RendezVousService {
     }
 
     // Recalcul de l'heure de fin
-    const start = new Date(`1970-01-01T${dto.heureDebut}:00`);
-    const end = new Date(start.getTime() + service.duree * 60000);
+    const start = new Date(`1970-01-01T${dto.startTime}:00`);
+    const end = new Date(start.getTime() + service.duration * 60000);
     const heureFin = end.toTimeString().slice(0, 5);
 
     // Vérification des conflits
@@ -145,14 +143,14 @@ export class RendezVousService {
       .createQueryBuilder('calendrier')
       .leftJoin('calendrier.prestataire', 'prestataire')
       .where('prestataire.id = :prestataireId', {
-        prestataireId: dto.prestataireId,
+        prestataireId: dto.providerId,
       })
       .andWhere('calendrier.date = :date', { date: dto.date })
       .andWhere(
         '(calendrier.heureDebut < :heureFin AND calendrier.heureFin > :heureDebut)',
-        { heureDebut: dto.heureDebut, heureFin },
+        { heureDebut: dto.startTime, heureFin },
       )
-      .andWhere('calendrier.id != :id', { id: rdv.calendrier.id }) // ok car calendrier n'est pas null
+      .andWhere('calendrier.id != :id', { id: rdv.calendar.id }) // ok car calendrier n'est pas null
       .getOne();
 
     if (conflit) {
@@ -160,17 +158,17 @@ export class RendezVousService {
     }
 
     // Mise à jour du calendrier
-    rdv.calendrier.date = dto.date;
-    rdv.calendrier.heureDebut = dto.heureDebut;
-    rdv.calendrier.heureFin = heureFin;
-    rdv.calendrier.service = service;
-    rdv.calendrier.prestataire = prestataire;
+    rdv.calendar.date = dto.date;
+    rdv.calendar.startTime = dto.startTime;
+    rdv.calendar.endTime = heureFin;
+    rdv.calendar.service = service;
+    rdv.calendar.provider = prestataire;
 
     // Mise à jour du rendez-vous
-    rdv.prestataire = prestataire;
+    rdv.provider = prestataire;
     rdv.service = service;
 
-    await this.calendrierRepo.save(rdv.calendrier);
+    await this.calendrierRepo.save(rdv.calendar);
     return this.rdvRepo.save(rdv);
   }
 
@@ -191,7 +189,7 @@ export class RendezVousService {
     }
 
     const estClient = rdv.client?.id === userId;
-    const estPrestataire = rdv.prestataire?.id === userId;
+    const estPrestataire = rdv.provider?.id === userId;
     console.log(
       `[annulerRendezVous] estClient=${estClient}, estPrestataire=${estPrestataire}`,
     );
@@ -205,13 +203,13 @@ export class RendezVousService {
       );
     }
 
-    if (rdv.calendrier) {
-      await this.calendrierRepo.delete(rdv.calendrier.id);
-      rdv.calendrier = null;
+    if (rdv.calendar) {
+      await this.calendrierRepo.delete(rdv.calendar.id);
+      rdv.calendar = null;
     } else {
     }
 
-    rdv.statut = RdvStatut.ANNULE;
+    rdv.status = AppointmentStatus.CANCELLED;
     await this.rdvRepo.save(rdv);
 
     return 'Rendez-vous annulé avec succès.';
@@ -223,7 +221,7 @@ export class RendezVousService {
   ): Promise<string> {
     const rdv = await this.rdvRepo.findOne({
       where: { id: rdvId },
-      relations: ['prestataire'],
+      relations: ['provider'],
     });
 
     console.log('RDV récupéré:', rdv);
@@ -232,28 +230,28 @@ export class RendezVousService {
       throw new NotFoundException('Rendez-vous introuvable.');
     }
 
-    if (!rdv.prestataire) {
+    if (!rdv.provider) {
       console.warn('Relation prestataire non chargée ou absente.');
       throw new BadRequestException(
         'Le rendez-vous n’a pas de prestataire associé.',
       );
     }
 
-    if (rdv.prestataire.id !== prestataireId) {
+    if (rdv.provider.id !== prestataireId) {
       console.log('ID prestataire attendu:', prestataireId);
-      console.log('ID prestataire du RDV:', rdv.prestataire.id);
+      console.log('ID prestataire du RDV:', rdv.provider.id);
       throw new BadRequestException(
         'Seul le prestataire peut confirmer ce rendez-vous.',
       );
     }
 
-    if (rdv.statut !== RdvStatut.EN_ATTENTE) {
+    if (rdv.status !== AppointmentStatus.PENDING) {
       throw new BadRequestException(
         'Le rendez-vous ne peut pas être confirmé.',
       );
     }
 
-    rdv.statut = RdvStatut.CONFIRME;
+    rdv.status = AppointmentStatus.CONFIRMED;
     await this.rdvRepo.save(rdv);
 
     console.log('Rendez-vous confirmé:', rdv);

@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
-import { Utilisateur } from './utilisateur.entity'; // pas 'prestataire'
+import { User } from './user.entity'; 
 
 @Entity()
 export class Service {
@@ -7,18 +7,18 @@ export class Service {
   id: string;
 
   @Column()
-  nom: string;
+  name: string;
 
   @Column()
-  duree: number;
+  duration: number;
 
   @Column()
   description: string;
 
   @Column('float')
-  prix: number;
+  price: number;
 
-  // Lien vers un utilisateur de rôle PRESTATAIRE
-  @ManyToOne(() => Utilisateur, (utilisateur) => utilisateur.services)
-  prestataire: Utilisateur;
+ 
+  @ManyToOne(() => User, (user) => user.services)
+  provider: User;
 }

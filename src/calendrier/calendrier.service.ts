@@ -5,36 +5,36 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Calendrier, CalendrierType } from '../entities/Calendrier.entity';
-import { CreateIndisponibiliteDto } from './dto/create-indisponibilite.dto';
-import { Utilisateur } from '../entities/utilisateur.entity';
+import { Calendar, CalendarType } from '../entities/Calendar.entity';
+import { CreateUnavailabilityDto } from './dto/create-indisponibilite.dto';
+import { User } from '../entities/user.entity';
 
 @Injectable()
 export class CalendrierService {
   constructor(
-    @InjectRepository(Calendrier)
-    private readonly calendrierRepo: Repository<Calendrier>,
+    @InjectRepository(Calendar)
+    private readonly calendrierRepo: Repository<Calendar>,
 
-    @InjectRepository(Utilisateur)
-    private readonly userRepo: Repository<Utilisateur>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
   async ajouterIndisponibilite(
-    dto: CreateIndisponibiliteDto,
+    dto: CreateUnavailabilityDto,
     prestataireId: string,
   ) {
-    const prestataire = await this.userRepo.findOne({
+    const provider = await this.userRepo.findOne({
       where: { id: prestataireId },
     });
-    if (!prestataire) {
+    if (!provider) {
       throw new NotFoundException('Prestataire non trouvé');
     }
 
     const conflit = await this.calendrierRepo.findOne({
       where: {
         date: dto.date,
-        prestataire: { id: prestataireId },
-        heureDebut: dto.heureDebut,
+        provider: { id: prestataireId },
+        startTime: dto.startTime,
       },
     });
 
@@ -44,8 +44,8 @@ export class CalendrierService {
 
     const indispo = this.calendrierRepo.create({
       ...dto,
-      prestataire,
-      type: CalendrierType.INDISPONIBILITE,
+      provider,
+      type: CalendarType.UNAVAILABILITY,
     });
 
     return this.calendrierRepo.save(indispo);
@@ -54,8 +54,8 @@ export class CalendrierService {
   async getIndisponibilites(prestataireId: string) {
     return this.calendrierRepo.find({
       where: {
-        prestataire: { id: prestataireId },
-        type: CalendrierType.INDISPONIBILITE,
+        provider: { id: prestataireId },
+        type: CalendarType.UNAVAILABILITY,
       },
       order: { date: 'ASC' },
     });

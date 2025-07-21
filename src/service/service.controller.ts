@@ -16,7 +16,7 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Role } from '../entities/utilisateur.entity';
+import { Role } from '../entities/user.entity';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('services')
@@ -24,7 +24,7 @@ export class ServiceController {
   constructor(private readonly serviceService: ServiceService) {}
 
   @Post(':prestataireId')
-  @Roles(Role.PRESTATAIRE)
+  @Roles(Role.PROVIDER)
   async create(
     @Param('prestataireId') prestataireId: string,
     @Body() body: CreateServiceDto,
@@ -32,7 +32,7 @@ export class ServiceController {
   ) {
     if (prestataireId !== req.user.userId) {
       throw new ForbiddenException(
-        "Vous ne pouvez créer un service que pour vous-même!!",
+        'Vous ne pouvez créer un service que pour vous-même!!',
       );
     }
     return this.serviceService.create(body, prestataireId);
@@ -45,35 +45,32 @@ export class ServiceController {
 
   @Get('prestataire/:id')
   findByPrestataire(@Param('id') id: string) {
-    return this.serviceService.findByPrestataire((id));
+    return this.serviceService.findByPrestataire(id);
   }
 
   @Patch(':id')
-  @Roles(Role.PRESTATAIRE)
+  @Roles(Role.PROVIDER)
   async update(
-    @Param('id') id: string, 
-    @Body() dto: UpdateServiceDto, 
-    @Req() req
+    @Param('id') id: string,
+    @Body() dto: UpdateServiceDto,
+    @Req() req,
   ) {
     const service = await this.serviceService.findOne(id);
-    if (service.prestataire.id !== req.user.userId) {
+    if (service.provider.id !== req.user.userId) {
       throw new ForbiddenException(
-        "Vous ne pouvez modifier que vos propres services",
+        'Vous ne pouvez modifier que vos propres services',
       );
     }
     return this.serviceService.update(id, dto);
   }
 
   @Delete(':id')
-  @Roles(Role.PRESTATAIRE)
-  async remove(
-    @Param('id') id: string, 
-    @Req() req
-  ) {
+  @Roles(Role.PROVIDER)
+  async remove(@Param('id') id: string, @Req() req) {
     const service = await this.serviceService.findOne(id);
-    if (service.prestataire.id !== req.user.userId) {
+    if (service.provider.id !== req.user.userId) {
       throw new ForbiddenException(
-        "Vous ne pouvez supprimer que vos propres services",
+        'Vous ne pouvez supprimer que vos propres services',
       );
     }
     return this.serviceService.remove(id);
