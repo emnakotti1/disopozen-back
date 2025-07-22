@@ -10,16 +10,16 @@ import { CreateUnavailabilityDto } from './dto/create-indisponibilite.dto';
 import { User } from '../entities/user.entity';
 
 @Injectable()
-export class CalendrierService {
+export class CalendarService {
   constructor(
     @InjectRepository(Calendar)
-    private readonly calendrierRepo: Repository<Calendar>,
+    private readonly calendarRepo: Repository<Calendar>,
 
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
   ) {}
 
-  async ajouterIndisponibilite(
+  async addUnavailability(
     dto: CreateUnavailabilityDto,
     prestataireId: string,
   ) {
@@ -27,10 +27,10 @@ export class CalendrierService {
       where: { id: prestataireId },
     });
     if (!provider) {
-      throw new NotFoundException('Prestataire non trouvé');
+      throw new NotFoundException('Provider not found.');
     }
 
-    const conflit = await this.calendrierRepo.findOne({
+    const conflit = await this.calendarRepo.findOne({
       where: {
         date: dto.date,
         provider: { id: prestataireId },
@@ -39,22 +39,22 @@ export class CalendrierService {
     });
 
     if (conflit) {
-      throw new ConflictException('Ce créneau est déjà occupé.');
+      throw new ConflictException('This slot is already occupied.');
     }
 
-    const indispo = this.calendrierRepo.create({
+    const indispo = this.calendarRepo.create({
       ...dto,
       provider,
       type: CalendarType.UNAVAILABILITY,
     });
 
-    return this.calendrierRepo.save(indispo);
+    return this.calendarRepo.save(indispo);
   }
 
-  async getIndisponibilites(prestataireId: string) {
-    return this.calendrierRepo.find({
+  async getUnavailabilities(providerId: string) {
+    return this.calendarRepo.find({
       where: {
-        provider: { id: prestataireId },
+        provider: { id: providerId },
         type: CalendarType.UNAVAILABILITY,
       },
       order: { date: 'ASC' },

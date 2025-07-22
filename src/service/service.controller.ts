@@ -23,19 +23,19 @@ import { Role } from '../entities/user.entity';
 export class ServiceController {
   constructor(private readonly serviceService: ServiceService) {}
 
-  @Post(':prestataireId')
+  @Post(':providerId')
   @Roles(Role.PROVIDER)
   async create(
-    @Param('prestataireId') prestataireId: string,
+    @Param('providerId') providerId: string,
     @Body() body: CreateServiceDto,
     @Req() req,
   ) {
-    if (prestataireId !== req.user.userId) {
+    if (providerId !== req.user.userId) {
       throw new ForbiddenException(
-        'Vous ne pouvez créer un service que pour vous-même!!',
+        'You can only create a service for yourself!',
       );
     }
-    return this.serviceService.create(body, prestataireId);
+    return this.serviceService.create(body, providerId);
   }
 
   @Get()
@@ -43,9 +43,9 @@ export class ServiceController {
     return this.serviceService.findAll();
   }
 
-  @Get('prestataire/:id')
-  findByPrestataire(@Param('id') id: string) {
-    return this.serviceService.findByPrestataire(id);
+  @Get('provider/:id')
+  findByProvider(@Param('id') id: string) {
+    return this.serviceService.findByProvider(id);
   }
 
   @Patch(':id')
@@ -58,7 +58,7 @@ export class ServiceController {
     const service = await this.serviceService.findOne(id);
     if (service.provider.id !== req.user.userId) {
       throw new ForbiddenException(
-        'Vous ne pouvez modifier que vos propres services',
+        'You can only modify your own services.',
       );
     }
     return this.serviceService.update(id, dto);
@@ -70,7 +70,7 @@ export class ServiceController {
     const service = await this.serviceService.findOne(id);
     if (service.provider.id !== req.user.userId) {
       throw new ForbiddenException(
-        'Vous ne pouvez supprimer que vos propres services',
+        'You can only delete your own services',
       );
     }
     return this.serviceService.remove(id);

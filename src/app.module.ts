@@ -3,11 +3,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UtilisateurModule } from './utilisateur/utilisateur.module';
+import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { ServiceModule } from './service/service.module';
-import { CalendrierModule } from './calendrier/calendrier.module';
-import { RendezvousModule } from './rendezvous/rendezvous.module';
+import { CalendarModule } from './calendar/calendar.module';
+import { AppointmentModule } from './appointment/appointment.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -21,12 +21,13 @@ import { RendezvousModule } from './rendezvous/rendezvous.module';
       synchronize: true, // OK pour dev
       logging: true, 
       entities: [__dirname + '/**/*.entity.{ts,js}'], 
+      
     }),
-    UtilisateurModule,
+    UserModule,
     AuthModule,
     ServiceModule,
-    CalendrierModule,
-    RendezvousModule,
+    CalendarModule,
+    AppointmentModule,
       
   ],
   controllers: [AppController],

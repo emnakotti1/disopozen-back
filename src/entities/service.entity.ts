@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
-import { User } from './user.entity'; 
+import { User } from './user.entity';
 
 @Entity()
 export class Service {
@@ -18,7 +18,6 @@ export class Service {
   @Column('float')
   price: number;
 
- 
   @ManyToOne(() => User, (user) => user.services)
   provider: User;
 }

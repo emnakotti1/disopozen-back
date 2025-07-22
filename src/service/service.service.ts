@@ -39,7 +39,7 @@ export class ServiceService {
     return this.serviceRepo.find({ relations: ['provider'] });
   }
 
-  async findByPrestataire(prestataireId: string) {
+  async findByProvider(prestataireId: string) {
     return this.serviceRepo
       .createQueryBuilder('service')
       .leftJoinAndSelect('service.provider', 'provider')
@@ -52,7 +52,7 @@ export class ServiceService {
       where: { id },
     });
     if (!service) {
-      throw new NotFoundException('Service non trouvé');
+      throw new NotFoundException('Service not found');
     }
 
     Object.assign(service, dto);
@@ -64,7 +64,7 @@ export class ServiceService {
       where: { id },
     });
     if (!service) {
-      throw new NotFoundException('Service non trouvé');
+      throw new NotFoundException('Service not found');
     }
 
     return this.serviceRepo.remove(service);
@@ -74,7 +74,7 @@ export class ServiceService {
       where: { id },
       relations: ['provider'],
     });
-    if (!service) throw new NotFoundException('Service non trouvé');
+    if (!service) throw new NotFoundException('Service not found');
     return service;
   }
 }
