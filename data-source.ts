@@ -1,12 +1,9 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
-import * as path from 'path'; 
-
+import * as path from 'path';
 
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-
-
 
 export default new DataSource({
   type: 'postgres',
@@ -17,6 +14,6 @@ export default new DataSource({
   database: process.env.DB_NAME,
   synchronize: false,
   logging: true,
- entities: [path.join(process.cwd(), 'src/**/*.entity.{ts,js}')],
+  entities: [path.join(process.cwd(), 'src/**/*.entity.{ts,js}')],
   migrations: [path.join(process.cwd(), 'src/migrations/*.{ts,js}')],
 });

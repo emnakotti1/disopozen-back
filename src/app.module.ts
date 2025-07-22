@@ -18,17 +18,15 @@ import { AppointmentModule } from './appointment/appointment.module';
       username: process.env.DB_USER,
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
-      synchronize: true, // OK pour dev
-      logging: true, 
-      entities: [__dirname + '/**/*.entity.{ts,js}'], 
-      
+      synchronize: false, // OK pour dev
+      logging: true,
+      entities: [__dirname + '/**/*.entity.{ts,js}'],
     }),
     UserModule,
     AuthModule,
     ServiceModule,
     CalendarModule,
     AppointmentModule,
-      
   ],
   controllers: [AppController],
   providers: [AppService],

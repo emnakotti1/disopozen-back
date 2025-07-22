@@ -10,6 +10,9 @@ export class Service {
   name: string;
 
   @Column()
+  first: string;
+
+  @Column()
   duration: number;
 
   @Column()
