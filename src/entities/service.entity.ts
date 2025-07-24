@@ -9,9 +9,7 @@ export class Service {
   @Column()
   name: string;
 
-  @Column()
-  first: string;
-
+ 
   @Column()
   duration: number;
 
