@@ -8,7 +8,7 @@ export class CreateAppointmentDto {
   providerId: string;
 
   @IsUUID()
-  serviceId: string;
+  serviceId:  string;
 
   @IsDateString()
   date: string;

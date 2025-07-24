@@ -5,6 +5,7 @@ import {
   ManyToOne,
   CreateDateColumn,
   OneToOne,
+  JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Appointment } from './appointment.entity';
@@ -43,7 +44,12 @@ export class Calendar {
   })
   provider: User;
 
-  @ManyToOne(() => Service, { nullable: true })
+ 
+  @Column({ nullable: true })
+  serviceId?: string;
+
+  @ManyToOne(() => Service, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'serviceId' })
   service?: Service;
 
   @OneToOne(() => Appointment, (appointment) => appointment.calendar, {

@@ -9,7 +9,7 @@ import { RolesGuard } from '../auth/roles.guard';
 @Controller('calendar')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class CalendarController {
-  constructor(private readonly calendrierService: CalendarService) {}
+  constructor(private readonly calendarService: CalendarService) {}
 
   @Post('Unavailability')
   @Roles(Role.PROVIDER)
@@ -18,12 +18,19 @@ export class CalendarController {
     @Req() req: any,
   ) {
     const providerId = req.user.id;
-    return this.calendrierService.addUnavailability(dto, providerId);
+    return this.calendarService.addUnavailability(dto, providerId);
   }
 
   @Get('Unavailabilities')
   @Roles(Role.PROVIDER)
   async getUnavailabilities(@Req() req: any) {
-    return this.calendrierService.getUnavailabilities(req.user.id);
+    return this.calendarService.getUnavailabilities(req.user.id);
+  }
+
+  @Get('me/full')
+  @Roles(Role.PROVIDER)
+  async getMyFullCalendar(@Req() req) {
+    const providerId = req.user.userId;
+    return this.calendarService.getFullCalendar(providerId);
   }
 }

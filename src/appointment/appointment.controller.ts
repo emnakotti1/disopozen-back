@@ -12,7 +12,7 @@ import { AppointmentService } from './appointment.service';
 import { CreateAppointmentDto } from './dto/create-Appointment.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@Controller('rendezvous')
+@Controller('appointment')
 @UseGuards(JwtAuthGuard)
 export class AppointmentController {
   constructor(private readonly AppointmentService: AppointmentService) {}
@@ -20,7 +20,8 @@ export class AppointmentController {
   @Post()
   async prendreRendezVous(@Body() dto: any, @Req() req: any) {
     console.log('test req', req.user);
-    return this.AppointmentService.getAppointment(dto, req.user.id);
+    return this.AppointmentService.getAppointment(dto, req.user.userId);
+
   }
 
   @Get('client/:clientId')
@@ -38,12 +39,12 @@ export class AppointmentController {
     return this.AppointmentService.updateAppointment(id, dto);
   }
 
-  @Patch('annuler/:id')
+  @Patch('delete/:id')
   async annulerRdv(@Param('id') id: string, @Req() req: any) {
     return this.AppointmentService.cancelAppointment(id, req.user.userId);
   }
 
-  @Patch('confirmer/:id')
+  @Patch('confirme/:id')
   async confirmerRdv(@Param('id') id: string, @Req() req: any) {
     return this.AppointmentService.confirmAppointment(id, req.user.userId);
   }

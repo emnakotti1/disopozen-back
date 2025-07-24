@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Service as ServiceEntity } from '../entities/service.entity';
@@ -6,6 +10,7 @@ import { CreateServiceDto } from './dto/create-service.dto';
 import { User } from '../entities/user.entity';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { start } from 'repl';
+import { ServiceStatus } from '../entities/service.entity';
 
 @Injectable()
 export class ServiceService {
@@ -59,16 +64,41 @@ export class ServiceService {
     return this.serviceRepo.save(service);
   }
 
-  async remove(id: string) {
+  async disableService(id: string, userId: string) {
     const service = await this.serviceRepo.findOne({
       where: { id },
+      relations: ['provider'],
     });
+
     if (!service) {
-      throw new NotFoundException('Service not found !');
+      throw new NotFoundException('Service not found!');
     }
 
-    return this.serviceRepo.remove(service);
+    if (service.provider.id !== userId) {
+      throw new ForbiddenException('You can only disable your own services');
+    }
+
+    service.status = ServiceStatus.INACTIVE;
+    return this.serviceRepo.save(service);
   }
+  async activeService(id: string, userId: string) {
+    const service = await this.serviceRepo.findOne({
+      where: { id },
+      relations: ['provider'],
+    });
+
+    if (!service) {
+      throw new NotFoundException('Service not found!');
+    }
+
+    if (service.provider.id !== userId) {
+      throw new ForbiddenException('You can only active your own services');
+    }
+
+    service.status = ServiceStatus.ACTIVE;
+    return this.serviceRepo.save(service);
+  }
+
   async findOne(id: string) {
     const service = await this.serviceRepo.findOne({
       where: { id },

@@ -60,4 +60,17 @@ export class CalendarService {
       order: { date: 'ASC' },
     });
   }
+  async getFullCalendar(providerId: string) {
+  return this.calendarRepo.find({
+    where: {
+      provider: { id: providerId },
+    },
+    relations: ['appointment', 'service'], 
+    order: {
+      date: 'ASC',
+      startTime: 'ASC',
+    },
+  });
+}
+
 }

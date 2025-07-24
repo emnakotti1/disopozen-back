@@ -57,22 +57,19 @@ export class ServiceController {
   ) {
     const service = await this.serviceService.findOne(id);
     if (service.provider.id !== req.user.userId) {
-      throw new ForbiddenException(
-        'You can only modify your own services.',
-      );
+      throw new ForbiddenException('You can only modify your own services.');
     }
     return this.serviceService.update(id, dto);
   }
 
-  @Delete(':id')
+  @Patch('desactiver/:id')
   @Roles(Role.PROVIDER)
-  async remove(@Param('id') id: string, @Req() req) {
-    const service = await this.serviceService.findOne(id);
-    if (service.provider.id !== req.user.userId) {
-      throw new ForbiddenException(
-        'You can only delete your own services',
-      );
-    }
-    return this.serviceService.remove(id);
+  async desactiver(@Param('id') id: string, @Req() req) {
+    return this.serviceService.disableService(id, req.user.userId);
+  }
+  @Patch('activer/:id')
+  @Roles(Role.PROVIDER)
+  async activer(@Param('id') id: string, @Req() req) {
+    return this.serviceService.activeService(id, req.user.userId);
   }
 }
