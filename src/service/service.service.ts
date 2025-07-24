@@ -64,7 +64,7 @@ export class ServiceService {
       where: { id },
     });
     if (!service) {
-      throw new NotFoundException('Service not found');
+      throw new NotFoundException('Service not found !');
     }
 
     return this.serviceRepo.remove(service);
