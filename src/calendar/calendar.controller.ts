@@ -17,14 +17,15 @@ export class CalendarController {
     @Body() dto: CreateUnavailabilityDto,
     @Req() req: any,
   ) {
-    const providerId = req.user.id;
+    console.log('Utilisateur connecté (req.user):', req.user);
+    const providerId = req.user.userId;
     return this.calendarService.addUnavailability(dto, providerId);
   }
 
   @Get('Unavailabilities')
   @Roles(Role.PROVIDER)
   async getUnavailabilities(@Req() req: any) {
-    return this.calendarService.getUnavailabilities(req.user.id);
+    return this.calendarService.getUnavailabilities(req.user.userId);
   }
 
   @Get('me/full')

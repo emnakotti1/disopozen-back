@@ -9,8 +9,9 @@ import { Repository } from 'typeorm';
 import { Appointment, AppointmentStatus } from '../entities/appointment.entity';
 import { CreateAppointmentDto } from './dto/create-Appointment.dto';
 import { User } from '../entities/user.entity';
-import { Service } from '../entities/service.entity';
+import { Service, ServiceStatus } from '../entities/service.entity';
 import { Calendar, CalendarType } from '../entities/Calendar.entity';
+// adapte le chemin
 
 @Injectable()
 export class AppointmentService {
@@ -29,68 +30,72 @@ export class AppointmentService {
   ) {}
 
   async getAppointment(dto: any, clientId: string) {
-  console.log('dto', dto);
+    console.log('dto', dto);
 
-  const client = await this.userRepo.findOne({ where: { id: clientId } });
-  const provider = await this.userRepo.findOne({
-    where: { id: dto.providerId },
-  });
-  const service = await this.serviceRepo.findOne({
-    where: { id: dto.serviceId },
-  });
+    const client = await this.userRepo.findOne({ where: { id: clientId } });
+    const provider = await this.userRepo.findOne({
+      where: { id: dto.providerId },
+    });
+    const service = await this.serviceRepo.findOne({
+      where: { id: dto.serviceId },
+    });
 
-  if (!client || !provider || !service) {
-    throw new NotFoundException('Client, provider or service not found.');
+    if (!client || !provider || !service) {
+      throw new NotFoundException('Client, provider or service not found.');
+    }
+
+    // ✅ Vérifie si le service est actif
+    if (service.status === ServiceStatus.INACTIVE) {
+      throw new ConflictException('This service is currently inactive.');
+    }
+
+    // Calcule l'heure de fin en fonction de la durée du service
+    const start = new Date(`1970-01-01T${dto.startTime}:00`);
+    const end = new Date(start.getTime() + service.duration * 60000);
+    const endTime = end.toTimeString().slice(0, 5); // 'HH:MM'
+
+    // Vérifie les conflits dans le calendrier
+    const conflict = await this.calendarRepo
+      .createQueryBuilder('calendar')
+      .leftJoin('calendar.provider', 'provider')
+      .where('provider.id = :providerId', { providerId: dto.providerId })
+      .andWhere('calendar.date = :date', { date: dto.date })
+      .andWhere(
+        '(calendar.startTime < :endTime AND calendar.endTime > :startTime)',
+        {
+          startTime: dto.startTime,
+          endTime: endTime,
+        },
+      )
+      .getOne();
+
+    if (conflict) {
+      throw new ConflictException(
+        'This time slot is already booked or unavailable.',
+      );
+    }
+
+    // Crée une entrée dans le calendrier
+    const calendar = this.calendarRepo.create({
+      date: dto.date,
+      startTime: dto.startTime,
+      endTime,
+      type: CalendarType.CLIENT_APPOINTMENT,
+      provider,
+      service,
+    });
+    await this.calendarRepo.save(calendar);
+
+    // Crée le rendez-vous
+    const appointment = this.aptRepo.create({
+      client,
+      provider,
+      service,
+      calendar,
+    });
+
+    return this.aptRepo.save(appointment);
   }
-
-  // Calculate end time based on service duration
-  const start = new Date(`1970-01-01T${dto.startTime}:00`);
-  const end = new Date(start.getTime() + service.duration * 60000);
-  const endTime = end.toTimeString().slice(0, 5); // 'HH:MM' format
-
-  // Check for conflicting calendar entries
-  const conflict = await this.calendarRepo
-    .createQueryBuilder('calendar')
-    .leftJoin('calendar.provider', 'provider')
-    .where('provider.id = :providerId', { providerId: dto.providerId })
-    .andWhere('calendar.date = :date', { date: dto.date })
-    .andWhere(
-      '(calendar.startTime < :endTime AND calendar.endTime > :startTime)',
-      {
-        startTime: dto.startTime,
-        endTime: endTime,
-      },
-    )
-    .getOne();
-
-  if (conflict) {
-    throw new ConflictException(
-      'This time slot is already booked or unavailable.',
-    );
-  }
-
-  // Create calendar entry
-  const calendar = this.calendarRepo.create({
-    date: dto.date,
-    startTime: dto.startTime,
-    endTime,
-    type: CalendarType.CLIENT_APPOINTMENT,
-    provider,
-    service,
-  });
-  await this.calendarRepo.save(calendar);
-
-  // Create appointment
-  const appointment = this.aptRepo.create({
-    client,
-    provider,
-    service,
-    calendar,
-  });
-
-  return this.aptRepo.save(appointment);
-}
-
 
   async getAptClient(clientId: string) {
     return this.aptRepo.find({
@@ -147,10 +152,10 @@ export class AppointmentService {
       })
       .andWhere('calendar.date = :date', { date: dto.date })
       .andWhere(
-        '(calendar.heureDebut < :heureFin AND calendar.heureFin > :heureDebut)',
-        { heureDebut: dto.startTime, heureFin },
+        '(calendar.startTime < :endTime AND calendar.endTime > :startTime)',
+        { startTime: dto.startTime, endTime: heureFin },
       )
-      .andWhere('calendar.id != :id', { id: apt.calendar.id }) // ok car calendar n'est pas null
+      .andWhere('calendar.id != :id', { id: apt.calendar.id })
       .getOne();
 
     if (conflit) {
@@ -184,17 +189,15 @@ export class AppointmentService {
     console.log('[annulerAppointment] apt récupéré:', apt);
 
     if (!apt) {
-      throw new NotFoundException('Rendez-vous introuvable.');
+      throw new NotFoundException('Appointment not found');
     }
 
     const isClient = apt.client?.id === userId;
     const isProvider = apt.provider?.id === userId;
-   
 
     if (!isClient && !isProvider) {
-     
       throw new BadRequestException(
-        "Vous n'avez pas les droits pour annuler ce rendez-vous.",
+        "You do not have permission to cancel this appointment.",
       );
     }
 
@@ -210,45 +213,35 @@ export class AppointmentService {
     return 'appointment canceled ';
   }
 
-  async confirmAppointment(
-    aptId: string,
-    providerId: string,
-  ): Promise<string> {
+  async confirmAppointment(aptId: string, providerId: string): Promise<string> {
     const apt = await this.aptRepo.findOne({
       where: { id: aptId },
       relations: ['provider'],
     });
-
-    
 
     if (!apt) {
       throw new NotFoundException('Appointment not found');
     }
 
     if (!apt.provider) {
-     
       throw new BadRequestException(
         'The appointment has no associated provider.',
       );
     }
 
     if (apt.provider.id !== providerId) {
-      
       throw new BadRequestException(
         'Only the provider can confirm this appointment.',
       );
     }
 
     if (apt.status !== AppointmentStatus.PENDING) {
-      throw new BadRequestException(
-        'The appointment cannot be confirmed',
-      );
+      throw new BadRequestException('The appointment cannot be confirmed');
     }
 
     apt.status = AppointmentStatus.CONFIRMED;
     await this.aptRepo.save(apt);
 
-   
-    return 'The appointment cannot be confirmed';
+    return 'The appointment has been confirmed successfully';
   }
 }
