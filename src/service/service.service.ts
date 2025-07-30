@@ -31,7 +31,6 @@ export class ServiceService {
         `Prestataire with id ${prestataireId} not found`,
       );
     }
-    console.log('testconsole', provider);
     const service = this.serviceRepo.create({
       ...dto,
       provider,
