@@ -16,26 +16,26 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Role } from '../entities/utilisateur.entity';
+import { Role } from '../entities/user.entity';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('services')
 export class ServiceController {
   constructor(private readonly serviceService: ServiceService) {}
 
-  @Post(':prestataireId')
-  @Roles(Role.PRESTATAIRE)
+  @Post(':providerId')
+  @Roles(Role.PROVIDER)
   async create(
-    @Param('prestataireId') prestataireId: string,
+    @Param('providerId') providerId: string,
     @Body() body: CreateServiceDto,
     @Req() req,
   ) {
-    if (prestataireId !== req.user.userId) {
+    if (providerId !== req.user.userId) {
       throw new ForbiddenException(
-        "Vous ne pouvez créer un service que pour vous-même!!",
+        'You can only create a service for yourself!',
       );
     }
-    return this.serviceService.create(body, prestataireId);
+    return this.serviceService.create(body, providerId);
   }
 
   @Get()
@@ -43,39 +43,33 @@ export class ServiceController {
     return this.serviceService.findAll();
   }
 
-  @Get('prestataire/:id')
-  findByPrestataire(@Param('id') id: string) {
-    return this.serviceService.findByPrestataire((id));
+  @Get('provider/:id')
+  findByProvider(@Param('id') id: string) {
+    return this.serviceService.findByProvider(id);
   }
 
   @Patch(':id')
-  @Roles(Role.PRESTATAIRE)
+  @Roles(Role.PROVIDER)
   async update(
-    @Param('id') id: string, 
-    @Body() dto: UpdateServiceDto, 
-    @Req() req
+    @Param('id') id: string,
+    @Body() dto: UpdateServiceDto,
+    @Req() req,
   ) {
     const service = await this.serviceService.findOne(id);
-    if (service.prestataire.id !== req.user.userId) {
-      throw new ForbiddenException(
-        "Vous ne pouvez modifier que vos propres services",
-      );
+    if (service.provider.id !== req.user.userId) {
+      throw new ForbiddenException('You can only modify your own services.');
     }
     return this.serviceService.update(id, dto);
   }
 
-  @Delete(':id')
-  @Roles(Role.PRESTATAIRE)
-  async remove(
-    @Param('id') id: string, 
-    @Req() req
-  ) {
-    const service = await this.serviceService.findOne(id);
-    if (service.prestataire.id !== req.user.userId) {
-      throw new ForbiddenException(
-        "Vous ne pouvez supprimer que vos propres services",
-      );
-    }
-    return this.serviceService.remove(id);
+  @Patch('desactiver/:id')
+  @Roles(Role.PROVIDER)
+  async desactiver(@Param('id') id: string, @Req() req) {
+    return this.serviceService.disableService(id, req.user.userId);
+  }
+  @Patch('activer/:id')
+  @Roles(Role.PROVIDER)
+  async activer(@Param('id') id: string, @Req() req) {
+    return this.serviceService.activeService(id, req.user.userId);
   }
 }

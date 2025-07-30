@@ -3,9 +3,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UtilisateurModule } from './utilisateur/utilisateur.module';
+import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { ServiceModule } from './service/service.module';
+import { CalendarModule } from './calendar/calendar.module';
+import { AppointmentModule } from './appointment/appointment.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -16,14 +18,15 @@ import { ServiceModule } from './service/service.module';
       username: process.env.DB_USER,
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
-      synchronize: true, // OK pour dev
-      logging: true, 
-      entities: [__dirname + '/**/*.entity.{ts,js}'], 
+      synchronize: false, // OK pour dev
+      logging: true,
+      entities: [__dirname + '/**/*.entity.{ts,js}'],
     }),
-    UtilisateurModule,
+    UserModule,
     AuthModule,
     ServiceModule,
-      
+    CalendarModule,
+    AppointmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

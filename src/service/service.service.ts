@@ -1,11 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Service as ServiceEntity } from '../entities/service.entity';
-
 import { CreateServiceDto } from './dto/create-service.dto';
-import { Utilisateur } from '../entities/utilisateur.entity';
+import { User } from '../entities/user.entity';
 import { UpdateServiceDto } from './dto/update-service.dto';
+import { start } from 'repl';
+import { ServiceStatus } from '../entities/service.entity';
 
 @Injectable()
 export class ServiceService {
@@ -13,35 +18,36 @@ export class ServiceService {
     @InjectRepository(ServiceEntity)
     private serviceRepo: Repository<ServiceEntity>,
 
-    @InjectRepository(Utilisateur)
-    private userRepo: Repository<Utilisateur>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
   ) {}
 
   async create(dto: CreateServiceDto, prestataireId: string) {
-    const prestataire = await this.userRepo.findOne({
+    const provider = await this.userRepo.findOne({
       where: { id: prestataireId },
     });
-    if (!prestataire) {
-      throw new NotFoundException(`Prestataire with id ${prestataireId} not found`);
+    if (!provider) {
+      throw new NotFoundException(
+        `Prestataire with id ${prestataireId} not found`,
+      );
     }
-
     const service = this.serviceRepo.create({
       ...dto,
-      prestataire,
+      provider,
     });
 
     return this.serviceRepo.save(service);
   }
 
   async findAll() {
-    return this.serviceRepo.find({ relations: ['prestataire'] });
+    return this.serviceRepo.find({ relations: ['provider'] });
   }
 
-  async findByPrestataire(prestataireId: string) {
+  async findByProvider(prestataireId: string) {
     return this.serviceRepo
       .createQueryBuilder('service')
-      .leftJoinAndSelect('service.prestataire', 'prestataire')
-      .where('prestataire.id = :id', { id: prestataireId })
+      .leftJoinAndSelect('service.provider', 'provider')
+      .where('provider.id = :id', { id: prestataireId })
       .getMany();
   }
 
@@ -50,30 +56,54 @@ export class ServiceService {
       where: { id },
     });
     if (!service) {
-      throw new NotFoundException('Service non trouvé');
+      throw new NotFoundException('Service not found');
     }
 
     Object.assign(service, dto);
     return this.serviceRepo.save(service);
   }
 
-  async remove(id: string) {
+  async disableService(id: string, userId: string) {
     const service = await this.serviceRepo.findOne({
       where: { id },
+      relations: ['provider'],
     });
+
     if (!service) {
-      throw new NotFoundException('Service non trouvé');
+      throw new NotFoundException('Service not found!');
     }
 
-    return this.serviceRepo.remove(service);
-  }
-  async findOne(id: string) {
-  const service = await this.serviceRepo.findOne({
-    where: { id },
-    relations: ['prestataire'],
-  });
-  if (!service) throw new NotFoundException('Service non trouvé');
-  return service;
-}
+    if (service.provider.id !== userId) {
+      throw new ForbiddenException('You can only disable your own services');
+    }
 
+    service.status = ServiceStatus.INACTIVE;
+    return this.serviceRepo.save(service);
+  }
+  async activeService(id: string, userId: string) {
+    const service = await this.serviceRepo.findOne({
+      where: { id },
+      relations: ['provider'],
+    });
+
+    if (!service) {
+      throw new NotFoundException('Service not found!');
+    }
+
+    if (service.provider.id !== userId) {
+      throw new ForbiddenException('You can only active your own services');
+    }
+
+    service.status = ServiceStatus.ACTIVE;
+    return this.serviceRepo.save(service);
+  }
+
+  async findOne(id: string) {
+    const service = await this.serviceRepo.findOne({
+      where: { id },
+      relations: ['provider'],
+    });
+    if (!service) throw new NotFoundException('Service not found');
+    return service;
+  }
 }
