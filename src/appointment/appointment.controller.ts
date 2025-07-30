@@ -19,7 +19,6 @@ export class AppointmentController {
 
   @Post()
   async prendreRendezVous(@Body() dto: any, @Req() req: any) {
-    console.log('test req', req.user);
     return this.AppointmentService.getAppointment(dto, req.user.userId);
 
   }
