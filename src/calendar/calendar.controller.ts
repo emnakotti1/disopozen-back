@@ -17,7 +17,6 @@ export class CalendarController {
     @Body() dto: CreateUnavailabilityDto,
     @Req() req: any,
   ) {
-    console.log('Utilisateur connecté (req.user):', req.user);
     const providerId = req.user.userId;
     return this.calendarService.addUnavailability(dto, providerId);
   }
