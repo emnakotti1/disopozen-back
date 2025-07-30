@@ -30,7 +30,6 @@ export class AppointmentService {
   ) {}
 
   async getAppointment(dto: any, clientId: string) {
-    console.log('dto', dto);
 
     const client = await this.userRepo.findOne({ where: { id: clientId } });
     const provider = await this.userRepo.findOne({
@@ -178,15 +177,12 @@ export class AppointmentService {
   }
 
   async cancelAppointment(aptId: string, userId: string): Promise<string> {
-    console.log(
-      `[annulerAppointment] Début annulation apt id=${aptId} par userId=${userId}`,
-    );
+
 
     const apt = await this.aptRepo.findOne({
       where: { id: aptId },
       relations: ['client', 'provider', 'calendar'],
     });
-    console.log('[annulerAppointment] apt récupéré:', apt);
 
     if (!apt) {
       throw new NotFoundException('Appointment not found');
