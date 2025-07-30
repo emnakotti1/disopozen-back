@@ -30,10 +30,6 @@ export class CalendarService {
     if (!provider) {
       throw new NotFoundException('Provider not found.');
     }
-
-    console.log('Provider récupéré:', provider);
-    console.log('Role trouvé dans la DB :', provider.role);
-
     if (provider.role?.toLowerCase() !== Role.PROVIDER) {
       throw new ForbiddenException(
         'Only providers can create unavailabilities.',
