@@ -30,7 +30,6 @@ export class AppointmentService {
   ) {}
 
   async getAppointment(dto: any, clientId: string) {
-
     const client = await this.userRepo.findOne({ where: { id: clientId } });
     const provider = await this.userRepo.findOne({
       where: { id: dto.providerId },
@@ -177,8 +176,6 @@ export class AppointmentService {
   }
 
   async cancelAppointment(aptId: string, userId: string): Promise<string> {
-
-
     const apt = await this.aptRepo.findOne({
       where: { id: aptId },
       relations: ['client', 'provider', 'calendar'],
@@ -193,7 +190,7 @@ export class AppointmentService {
 
     if (!isClient && !isProvider) {
       throw new BadRequestException(
-        "You do not have permission to cancel this appointment.",
+        'You do not have permission to cancel this appointment.',
       );
     }
 

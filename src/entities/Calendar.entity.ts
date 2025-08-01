@@ -44,7 +44,6 @@ export class Calendar {
   })
   provider: User;
 
- 
   @Column({ nullable: true })
   serviceId?: string;
 

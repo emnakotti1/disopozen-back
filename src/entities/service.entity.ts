@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { User } from './user.entity';
 export enum ServiceStatus {
   ACTIVE = 'active',
-  INACTIVE= 'inactive',
+  INACTIVE = 'inactive',
 }
 
 @Entity()
