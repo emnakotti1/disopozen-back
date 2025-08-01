@@ -25,13 +25,13 @@ export class User {
   email: string;
 
   @Column()
+  phoneNumber: string;
+
+  @Column()
   password: string;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   registrationDate: Date;
-
-  @Column({ default: 'local' }) // or 'google'
-  provider: string;
 
   @Column({
     type: 'enum',

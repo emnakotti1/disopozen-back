@@ -20,7 +20,6 @@ export class AppointmentController {
   @Post()
   async prendreRendezVous(@Body() dto: any, @Req() req: any) {
     return this.AppointmentService.getAppointment(dto, req.user.userId);
-
   }
 
   @Get('client/:clientId')
