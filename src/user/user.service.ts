@@ -18,6 +18,7 @@ export class UserService {
     );
   }
 
+  // Retrieves a user by ID, excluding the password field
   async findOne(id: string): Promise<Omit<User, 'password'>> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
