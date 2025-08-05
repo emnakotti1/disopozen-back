@@ -22,7 +22,7 @@ export class UserController {
   }
 
   @Get('providers')
-  //@UseGuards(JwtAuthGuard) // Commenté pour accès public
+
   findProviders() {
     return this.userService.findProviders();
   }

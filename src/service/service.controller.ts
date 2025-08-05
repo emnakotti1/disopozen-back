@@ -64,12 +64,12 @@ export class ServiceController {
 
   @Patch('desactiver/:id')
   @Roles(Role.PROVIDER)
-  async desactiver(@Param('id') id: string, @Req() req) {
+  async desableService(@Param('id') id: string, @Req() req) {
     return this.serviceService.disableService(id, req.user.userId);
   }
   @Patch('activer/:id')
   @Roles(Role.PROVIDER)
-  async activer(@Param('id') id: string, @Req() req) {
+  async activeService(@Param('id') id: string, @Req() req) {
     return this.serviceService.activeService(id, req.user.userId);
   }
 }
