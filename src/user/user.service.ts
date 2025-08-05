@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
+import { User, Role } from '../entities/user.entity';
 import { UpdateUserDto } from '../auth/dto/update-user.dto';
 
 @Injectable()
@@ -49,6 +49,9 @@ export class UserService {
 
     // Update user properties
     Object.assign(user, updateUserDto);
+    if (updateUserDto.address !== undefined) {
+      user.address = updateUserDto.address;
+    }
 
     const updatedUser = await this.userRepository.save(user);
     const { password, ...userWithoutPassword } = updatedUser;
@@ -61,5 +64,21 @@ export class UserService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     await this.userRepository.remove(user);
+  }
+  async findProviders(): Promise<Partial<User>[]> {
+    const providers = await this.userRepository.find({
+      select: [
+      'firstName',
+      'lastName',
+      'phoneNumber',
+      'address',
+      'imageUrl',
+      'postalCode',
+      'city',
+      ],
+      where: { role: Role.PROVIDER },
+    });
+
+    return providers;
   }
 }

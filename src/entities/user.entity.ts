@@ -30,6 +30,17 @@ export class User {
   @Column()
   password: string;
 
+  @Column({ nullable: true })
+  imageUrl: string;
+
+  @Column({ nullable: true })
+  address?: string;
+
+  @Column({ nullable: true })
+  postalCode?: string;
+
+  @Column({ nullable: true })
+  city?: string;
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   registrationDate: Date;
 
