@@ -7,6 +7,8 @@ import {
   Body,
   UseGuards,
   ParseUUIDPipe,
+  Query
+  
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from '../auth/dto/update-user.dto';
@@ -22,9 +24,11 @@ export class UserController {
   }
 
   @Get('providers')
-
-  findProviders() {
-    return this.userService.findProviders();
+  findProviders(@Query('page') page = 1, @Query('limit') limit = 6) {
+    return this.userService.findProviders({
+      page: Number(page),
+      limit: Number(limit),
+    });
   }
 
   @Get(':id')
@@ -45,3 +49,5 @@ export class UserController {
     return this.userService.remove(id);
   }
 }
+
+

@@ -11,7 +11,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Corrige le chemin ici
+ 
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads/',
   });

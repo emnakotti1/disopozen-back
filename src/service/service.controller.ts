@@ -17,6 +17,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '../entities/user.entity';
+import { Public } from '../auth/public.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('services')
@@ -42,7 +43,7 @@ export class ServiceController {
   findAll() {
     return this.serviceService.findAll();
   }
-
+  @Public()
   @Get('provider/:id')
   findByProvider(@Param('id') id: string) {
     return this.serviceService.findByProvider(id);

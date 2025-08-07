@@ -65,20 +65,20 @@ export class UserService {
     }
     await this.userRepository.remove(user);
   }
-  async findProviders(): Promise<Partial<User>[]> {
-    const providers = await this.userRepository.find({
-      select: [
-      'firstName',
-      'lastName',
-      'phoneNumber',
-      'address',
-      'imageUrl',
-      'postalCode',
-      'city',
-      ],
-      where: { role: Role.PROVIDER },
-    });
+ async findProviders(pagination: { page: number; limit: number }): Promise<{ data: Partial<User>[]; total: number; }> {
+  const { page, limit } = pagination;
+  const [result, total] = await this.userRepository.findAndCount({
+    select: ['id','firstName', 'lastName', 'phoneNumber', 'address', 'imageUrl', 'postalCode', 'city','email'],
+    where: { role: Role.PROVIDER },
+    skip: (page - 1) * limit,
+    take: limit,
+  });
 
-    return providers;
-  }
+  return {
+    data: result,
+    total,
+  };
+}
+
+
 }
