@@ -29,7 +29,7 @@ export class AppointmentService {
     private readonly calendarRepo: Repository<Calendar>,
   ) {}
 
-  async getAppointment(dto: any, clientId: string) {
+  async getAppointment(dto: CreateAppointmentDto, clientId: string) {
     const client = await this.userRepo.findOne({ where: { id: clientId } });
     const provider = await this.userRepo.findOne({
       where: { id: dto.providerId },
@@ -90,6 +90,7 @@ export class AppointmentService {
       provider,
       service,
       calendar,
+      notes: dto.notes, // Ajout des notes additionnelles
     });
 
     return this.aptRepo.save(appointment);
@@ -170,6 +171,9 @@ export class AppointmentService {
     // Mise à jour du rendez-vous
     apt.provider = provider;
     apt.service = service;
+    if (dto.notes !== undefined) {
+      apt.notes = dto.notes;
+    }
 
     await this.calendarRepo.save(apt.calendar);
     return this.aptRepo.save(apt);
@@ -197,7 +201,6 @@ export class AppointmentService {
     if (apt.calendar) {
       await this.calendarRepo.delete(apt.calendar.id);
       apt.calendar = null;
-    } else {
     }
 
     apt.status = AppointmentStatus.CANCELLED;

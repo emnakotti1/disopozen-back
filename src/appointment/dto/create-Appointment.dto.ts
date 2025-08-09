@@ -1,4 +1,11 @@
-import { IsUUID, IsDateString, Matches } from 'class-validator';
+import {
+  IsUUID,
+  IsDateString,
+  Matches,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateAppointmentDto {
   @IsUUID()
@@ -17,4 +24,9 @@ export class CreateAppointmentDto {
     message: 'Invalid time format (HH:MM)',
   })
   startTime: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500, { message: 'Notes cannot exceed 500 characters' })
+  notes?: string;
 }

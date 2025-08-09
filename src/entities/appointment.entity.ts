@@ -63,6 +63,6 @@ export class Appointment {
   @Column({ default: false })
   isCancelled: boolean;
 
-  @Column({ nullable: true })
-  comment?: string;
+  @Column({ nullable: true, length: 500 })
+  notes?: string;
 }
