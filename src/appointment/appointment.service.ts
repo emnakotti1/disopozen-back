@@ -198,11 +198,6 @@ export class AppointmentService {
       );
     }
 
-    if (apt.calendar) {
-      await this.calendarRepo.delete(apt.calendar.id);
-      apt.calendar = null;
-    }
-
     apt.status = AppointmentStatus.CANCELLED;
     await this.aptRepo.save(apt);
 

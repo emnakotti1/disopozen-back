@@ -33,12 +33,12 @@ export class AppointmentController {
   }
 
   @Patch(':id')
-  async modifier(@Param('id') id: string, @Body() dto: CreateAppointmentDto) {
+  async update(@Param('id') id: string, @Body() dto: CreateAppointmentDto) {
     return this.AppointmentService.updateAppointment(id, dto);
   }
 
-  @Patch('delete/:id')
-  async annulerRdv(@Param('id') id: string, @Req() req: any) {
+  @Patch('cancel/:id')
+  async cancelAppointment(@Param('id') id: string, @Req() req: any) {
     return this.AppointmentService.cancelAppointment(id, req.user.userId);
   }
 
