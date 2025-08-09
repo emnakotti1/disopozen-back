@@ -5,14 +5,11 @@ import {
   Delete,
   Param,
   Body,
-  UseGuards,
   ParseUUIDPipe,
-  Query
-  
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from '../auth/dto/update-user.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('users')
 export class UserController {
@@ -24,10 +21,15 @@ export class UserController {
   }
 
   @Get('providers')
-  findProviders(@Query('page') page = 1, @Query('limit') limit = 6) {
+  findProviders(
+    @Query('page') page = 1,
+    @Query('limit') limit = 6,
+    @Query('search') search?: string,
+  ) {
     return this.userService.findProviders({
       page: Number(page),
       limit: Number(limit),
+      search,
     });
   }
 
@@ -49,5 +51,3 @@ export class UserController {
     return this.userService.remove(id);
   }
 }
-
-

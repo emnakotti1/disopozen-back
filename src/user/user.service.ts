@@ -65,20 +65,44 @@ export class UserService {
     }
     await this.userRepository.remove(user);
   }
- async findProviders(pagination: { page: number; limit: number }): Promise<{ data: Partial<User>[]; total: number; }> {
-  const { page, limit } = pagination;
-  const [result, total] = await this.userRepository.findAndCount({
-    select: ['id','firstName', 'lastName', 'phoneNumber', 'address', 'imageUrl', 'postalCode', 'city','email'],
-    where: { role: Role.PROVIDER },
-    skip: (page - 1) * limit,
-    take: limit,
-  });
+  async findProviders(pagination: {
+    page: number;
+    limit: number;
+    search?: string;
+  }): Promise<{ data: Partial<User>[]; total: number }> {
+    const { page, limit, search } = pagination;
 
-  return {
-    data: result,
-    total,
-  };
-}
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.firstName',
+        'user.lastName',
+        'user.phoneNumber',
+        'user.address',
+        'user.imageUrl',
+        'user.postalCode',
+        'user.city',
+        'user.email',
+      ])
+      .where('user.role = :role', { role: Role.PROVIDER });
 
+    // Add search functionality if search parameter is provided
+    if (search?.trim()) {
+      queryBuilder.andWhere(
+        "(LOWER(user.firstName) LIKE LOWER(:search) OR LOWER(user.lastName) LIKE LOWER(:search) OR LOWER(CONCAT(user.firstName, ' ', user.lastName)) LIKE LOWER(:search))",
+        { search: `%${search.trim()}%` },
+      );
+    }
 
+    const [result, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      data: result,
+      total,
+    };
+  }
 }
