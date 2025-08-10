@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { ServiceModule } from './service/service.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { AppointmentModule } from './appointment/appointment.module';
+import { WorkingHoursModule } from './working-hours/working-hours.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -27,6 +28,7 @@ import { AppointmentModule } from './appointment/appointment.module';
     ServiceModule,
     CalendarModule,
     AppointmentModule,
+    WorkingHoursModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -3,6 +3,7 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Service } from './service.entity';
 import { Calendar } from './Calendar.entity';
 import { Appointment } from './appointment.entity';
+import { WorkingHours } from './working-hours.entity';
 
 export enum Role {
   CLIENT = 'client',
@@ -66,4 +67,8 @@ export class User {
   // Provider: appointments received
   @OneToMany(() => Appointment, (appointment) => appointment.provider)
   providerAppointments: Appointment[];
+
+  // Provider: working hours
+  @OneToMany(() => WorkingHours, (workingHours) => workingHours.provider)
+  workingHours: WorkingHours[];
 }
