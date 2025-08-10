@@ -42,6 +42,13 @@ export class User {
 
   @Column({ nullable: true })
   city?: string;
+
+  @Column({ nullable: true })
+  governorate?: string;
+
+  @Column({ type: 'text', nullable: true })
+  biography?: string;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   registrationDate: Date;
 

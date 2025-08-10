@@ -50,5 +50,13 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsString()
+  governorate?: string;
+
+  @IsOptional()
+  @IsString()
+  biography?: string;
+
+  @IsOptional()
+  @IsString()
   provider?: string;
 }
