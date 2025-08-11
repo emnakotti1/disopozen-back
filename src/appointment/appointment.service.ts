@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Appointment, AppointmentStatus } from '../entities/appointment.entity';
 import { CreateAppointmentDto } from './dto/create-Appointment.dto';
+import { AppointmentDetailsDto } from './dto/appointment-details.dto';
 import { User } from '../entities/user.entity';
 import { Service, ServiceStatus } from '../entities/service.entity';
 import { Calendar, CalendarType } from '../entities/Calendar.entity';
@@ -234,5 +235,22 @@ export class AppointmentService {
     await this.aptRepo.save(apt);
 
     return 'The appointment has been confirmed successfully';
+  }
+
+  async getAppointmentDetails(
+    appointmentId: string,
+  ): Promise<AppointmentDetailsDto> {
+    const appointment = await this.aptRepo.findOne({
+      where: { id: appointmentId },
+      relations: ['client', 'provider', 'service', 'calendar'],
+    });
+
+    if (!appointment) {
+      throw new NotFoundException(
+        `Appointment with ID ${appointmentId} not found`,
+      );
+    }
+
+    return new AppointmentDetailsDto(appointment);
   }
 }

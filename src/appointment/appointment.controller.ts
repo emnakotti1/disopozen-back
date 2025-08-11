@@ -32,6 +32,11 @@ export class AppointmentController {
     return this.AppointmentService.getAptprovider(prestataireId);
   }
 
+  @Get('details/:id')
+  async getAppointmentDetails(@Param('id') id: string) {
+    return this.AppointmentService.getAppointmentDetails(id);
+  }
+
   @Patch(':id')
   async update(@Param('id') id: string, @Body() dto: CreateAppointmentDto) {
     return this.AppointmentService.updateAppointment(id, dto);
