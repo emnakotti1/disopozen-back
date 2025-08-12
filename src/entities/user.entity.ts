@@ -4,6 +4,7 @@ import { Service } from './service.entity';
 import { Calendar } from './Calendar.entity';
 import { Appointment } from './appointment.entity';
 import { WorkingHours } from './working-hours.entity';
+import { Client } from './client.entity';
 
 export enum Role {
   CLIENT = 'client',
@@ -78,4 +79,8 @@ export class User {
   // Provider: working hours
   @OneToMany(() => WorkingHours, (workingHours) => workingHours.provider)
   workingHours: WorkingHours[];
+
+  // Provider: clients managed
+  @OneToMany(() => Client, (client) => client.provider)
+  clients: Client[];
 }
