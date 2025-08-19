@@ -17,6 +17,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '../entities/user.entity';
+import { Public } from '../auth/public.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('services')
@@ -42,7 +43,7 @@ export class ServiceController {
   findAll() {
     return this.serviceService.findAll();
   }
-
+  @Public()
   @Get('provider/:id')
   findByProvider(@Param('id') id: string) {
     return this.serviceService.findByProvider(id);
@@ -64,12 +65,12 @@ export class ServiceController {
 
   @Patch('desactiver/:id')
   @Roles(Role.PROVIDER)
-  async desactiver(@Param('id') id: string, @Req() req) {
+  async desableService(@Param('id') id: string, @Req() req) {
     return this.serviceService.disableService(id, req.user.userId);
   }
   @Patch('activer/:id')
   @Roles(Role.PROVIDER)
-  async activer(@Param('id') id: string, @Req() req) {
+  async activeService(@Param('id') id: string, @Req() req) {
     return this.serviceService.activeService(id, req.user.userId);
   }
 }

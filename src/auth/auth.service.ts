@@ -31,6 +31,10 @@ export class AuthService {
       ...data,
       password: hashedPassword,
       role: data.role || Role.CLIENT,
+      imageUrl: data.imageUrl,
+      address: data.address,
+      postalCode: data.postalCode,
+      city: data.city,
     });
 
     const savedUser = await this.utilisateurRepo.save(newUser);
@@ -48,6 +52,8 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
       role: user.role,
     };
 

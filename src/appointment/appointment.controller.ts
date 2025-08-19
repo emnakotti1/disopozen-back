@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { AppointmentService } from './appointment.service';
 import { CreateAppointmentDto } from './dto/create-Appointment.dto';
+import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('appointment')
@@ -32,13 +33,18 @@ export class AppointmentController {
     return this.AppointmentService.getAptprovider(prestataireId);
   }
 
+  @Get('details/:id')
+  async getAppointmentDetails(@Param('id') id: string) {
+    return this.AppointmentService.getAppointmentDetails(id);
+  }
+
   @Patch(':id')
-  async modifier(@Param('id') id: string, @Body() dto: CreateAppointmentDto) {
+  async update(@Param('id') id: string, @Body() dto: UpdateAppointmentDto) {
     return this.AppointmentService.updateAppointment(id, dto);
   }
 
-  @Patch('delete/:id')
-  async annulerRdv(@Param('id') id: string, @Req() req: any) {
+  @Patch('cancel/:id')
+  async cancelAppointment(@Param('id') id: string, @Req() req: any) {
     return this.AppointmentService.cancelAppointment(id, req.user.userId);
   }
 

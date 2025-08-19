@@ -61,7 +61,6 @@ export class CalendarService {
     return this.calendarRepo.find({
       where: {
         provider: { id: providerId },
-        type: CalendarType.UNAVAILABILITY,
       },
       order: { date: 'ASC' },
     });

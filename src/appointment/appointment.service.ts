@@ -8,6 +8,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Appointment, AppointmentStatus } from '../entities/appointment.entity';
 import { CreateAppointmentDto } from './dto/create-Appointment.dto';
+import { UpdateAppointmentDto } from './dto/update-appointment.dto';
+import { AppointmentDetailsDto } from './dto/appointment-details.dto';
 import { User } from '../entities/user.entity';
 import { Service, ServiceStatus } from '../entities/service.entity';
 import { Calendar, CalendarType } from '../entities/Calendar.entity';
@@ -29,7 +31,7 @@ export class AppointmentService {
     private readonly calendarRepo: Repository<Calendar>,
   ) {}
 
-  async getAppointment(dto: any, clientId: string) {
+  async getAppointment(dto: CreateAppointmentDto, clientId: string) {
     const client = await this.userRepo.findOne({ where: { id: clientId } });
     const provider = await this.userRepo.findOne({
       where: { id: dto.providerId },
@@ -90,6 +92,7 @@ export class AppointmentService {
       provider,
       service,
       calendar,
+      notes: dto.notes, // Ajout des notes additionnelles
     });
 
     return this.aptRepo.save(appointment);
@@ -111,7 +114,7 @@ export class AppointmentService {
     });
   }
 
-  async updateAppointment(id: string, dto: CreateAppointmentDto) {
+  async updateAppointment(id: string, dto: UpdateAppointmentDto) {
     const apt = await this.aptRepo.findOne({
       where: { id },
       relations: ['client', 'provider', 'service', 'calendar'],
@@ -125,54 +128,98 @@ export class AppointmentService {
       throw new NotFoundException('Calendar of appointment not found');
     }
 
-    const provider = await this.userRepo.findOne({
-      where: { id: dto.providerId },
-    });
-    const service = await this.serviceRepo.findOne({
-      where: { id: dto.serviceId },
-    });
+    // Determine target service: provided or keep current
+    const targetService = dto.serviceId
+      ? await this.serviceRepo.findOne({
+          where: { id: dto.serviceId },
+          relations: ['provider'],
+        })
+      : apt.service;
 
-    if (!provider || !service) {
+    // Determine target provider: provided, or service.provider, or keep current
+    const targetProvider = dto.providerId
+      ? await this.userRepo.findOne({ where: { id: dto.providerId } })
+      : (targetService?.provider ?? apt.provider);
+
+    if (!targetProvider || !targetService) {
       throw new NotFoundException('Provider or service not found');
     }
 
+    // Ensure service is active (same rule as creation)
+    if (targetService.status === ServiceStatus.INACTIVE) {
+      throw new ConflictException('This service is currently inactive.');
+    }
+
+    // If the incoming providerId differs from the service's provider, we stick to the service's provider.
+
     // Recalcul de l'heure de fin
-    const start = new Date(`1970-01-01T${dto.startTime}:00`);
-    const end = new Date(start.getTime() + service.duration * 60000);
-    const heureFin = end.toTimeString().slice(0, 5);
+    // Determine start time (from dto or current)
+    const startTimeStr = dto.startTime ?? apt.calendar.startTime;
+    // Normalize to HH:MM
+    const toHHMM = (t: string) => t.slice(0, 5);
+    const start = new Date(
+      `1970-01-01T${
+        startTimeStr.length === 5 ? startTimeStr + ':00' : startTimeStr
+      }`,
+    );
+    // Determine end time: prefer dto.endTime if provided, else compute from service duration
+    const endTimeStr = dto.endTime
+      ? toHHMM(dto.endTime)
+      : toHHMM(
+          new Date(
+            start.getTime() + targetService.duration * 60000,
+          ).toTimeString(),
+        );
 
     // Vérification des conflits
-    const conflit = await this.calendarRepo
+    // Disallow cross-midnight ranges for now (times are same-day in schema)
+    const startHHMM = toHHMM(startTimeStr);
+    if (endTimeStr <= startHHMM) {
+      throw new BadRequestException(
+        'End time must be after start time on the same day. Overnight slots are not supported.',
+      );
+    }
+
+    const conflict = await this.calendarRepo
       .createQueryBuilder('calendar')
       .leftJoin('calendar.provider', 'provider')
-      .where('provider.id = :providerId', {
-        providerId: dto.providerId,
+      .where('provider.id = :providerId', { providerId: targetProvider.id })
+      .andWhere('calendar.date = :date', {
+        date: dto.date ?? apt.calendar.date,
       })
-      .andWhere('calendar.date = :date', { date: dto.date })
       .andWhere(
         '(calendar.startTime < :endTime AND calendar.endTime > :startTime)',
-        { startTime: dto.startTime, endTime: heureFin },
+        { startTime: startHHMM, endTime: endTimeStr },
       )
       .andWhere('calendar.id != :id', { id: apt.calendar.id })
       .getOne();
 
-    if (conflit) {
+    if (conflict) {
       throw new ConflictException('This slot is already occupied.');
     }
 
-    // Mise à jour du calendar
-    apt.calendar.date = dto.date;
-    apt.calendar.startTime = dto.startTime;
-    apt.calendar.endTime = heureFin;
-    apt.calendar.service = service;
-    apt.calendar.provider = provider;
+    // Persist using a transaction to avoid partial saves
+    return await this.aptRepo.manager.transaction(async (em) => {
+      const calendar = apt.calendar as Calendar; // non-null (checked above)
 
-    // Mise à jour du rendez-vous
-    apt.provider = provider;
-    apt.service = service;
+      // Mise à jour du calendar
+      calendar.date = dto.date ?? calendar.date;
+      calendar.startTime = startHHMM;
+      calendar.endTime = endTimeStr;
+      calendar.service = targetService;
+      calendar.provider = targetProvider;
+      calendar.type = CalendarType.CLIENT_APPOINTMENT;
 
-    await this.calendarRepo.save(apt.calendar);
-    return this.aptRepo.save(apt);
+      // Mise à jour du rendez-vous
+      apt.provider = targetProvider;
+      apt.service = targetService;
+      if (dto.notes !== undefined) {
+        apt.notes = dto.notes;
+      }
+
+      await em.getRepository(Calendar).save(calendar);
+      return await em.getRepository(Appointment).save(apt);
+    });
   }
 
   async cancelAppointment(aptId: string, userId: string): Promise<string> {
@@ -192,12 +239,6 @@ export class AppointmentService {
       throw new BadRequestException(
         'You do not have permission to cancel this appointment.',
       );
-    }
-
-    if (apt.calendar) {
-      await this.calendarRepo.delete(apt.calendar.id);
-      apt.calendar = null;
-    } else {
     }
 
     apt.status = AppointmentStatus.CANCELLED;
@@ -236,5 +277,22 @@ export class AppointmentService {
     await this.aptRepo.save(apt);
 
     return 'The appointment has been confirmed successfully';
+  }
+
+  async getAppointmentDetails(
+    appointmentId: string,
+  ): Promise<AppointmentDetailsDto> {
+    const appointment = await this.aptRepo.findOne({
+      where: { id: appointmentId },
+      relations: ['client', 'provider', 'service', 'calendar'],
+    });
+
+    if (!appointment) {
+      throw new NotFoundException(
+        `Appointment with ID ${appointmentId} not found`,
+      );
+    }
+
+    return new AppointmentDetailsDto(appointment);
   }
 }

@@ -1,4 +1,12 @@
-import { Controller, Post, Body, UseGuards, Req, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Req,
+  Get,
+  Param,
+} from '@nestjs/common';
 import { CalendarService } from './calendar.service';
 import { CreateUnavailabilityDto } from './dto/create-indisponibilite.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -25,6 +33,11 @@ export class CalendarController {
   @Roles(Role.PROVIDER)
   async getUnavailabilities(@Req() req: any) {
     return this.calendarService.getUnavailabilities(req.user.userId);
+  }
+
+  @Get('provider/:providerId/unavailabilities')
+  async getProviderUnavailabilities(@Param('providerId') providerId: string) {
+    return this.calendarService.getUnavailabilities(providerId);
   }
 
   @Get('me/full')

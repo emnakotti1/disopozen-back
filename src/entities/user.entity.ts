@@ -3,6 +3,8 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Service } from './service.entity';
 import { Calendar } from './Calendar.entity';
 import { Appointment } from './appointment.entity';
+import { WorkingHours } from './working-hours.entity';
+import { Client } from './client.entity';
 
 export enum Role {
   CLIENT = 'client',
@@ -30,6 +32,24 @@ export class User {
   @Column()
   password: string;
 
+  @Column({ nullable: true })
+  imageUrl: string;
+
+  @Column({ nullable: true })
+  address?: string;
+
+  @Column({ nullable: true })
+  postalCode?: string;
+
+  @Column({ nullable: true })
+  city?: string;
+
+  @Column({ nullable: true })
+  governorate?: string;
+
+  @Column({ type: 'text', nullable: true })
+  biography?: string;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   registrationDate: Date;
 
@@ -55,4 +75,12 @@ export class User {
   // Provider: appointments received
   @OneToMany(() => Appointment, (appointment) => appointment.provider)
   providerAppointments: Appointment[];
+
+  // Provider: working hours
+  @OneToMany(() => WorkingHours, (workingHours) => workingHours.provider)
+  workingHours: WorkingHours[];
+
+  // Provider: clients managed
+  @OneToMany(() => Client, (client) => client.provider)
+  clients: Client[];
 }

@@ -8,6 +8,9 @@ import { AuthModule } from './auth/auth.module';
 import { ServiceModule } from './service/service.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { AppointmentModule } from './appointment/appointment.module';
+import { WorkingHoursModule } from './working-hours/working-hours.module';
+import { ClientModule } from './client/client.module';
+import { HealthController } from '../src/health.controller';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -18,7 +21,7 @@ import { AppointmentModule } from './appointment/appointment.module';
       username: process.env.DB_USER,
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
-      synchronize: false, // OK pour dev
+      synchronize: true, // OK pour dev
       logging: true,
       entities: [__dirname + '/**/*.entity.{ts,js}'],
     }),
@@ -27,8 +30,11 @@ import { AppointmentModule } from './appointment/appointment.module';
     ServiceModule,
     CalendarModule,
     AppointmentModule,
+    WorkingHoursModule,
+    ClientModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [AppService],
 })
 export class AppModule {}
+

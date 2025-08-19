@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
+import { User, Role } from '../entities/user.entity';
 import { UpdateUserDto } from '../auth/dto/update-user.dto';
 
 @Injectable()
@@ -49,6 +49,9 @@ export class UserService {
 
     // Update user properties
     Object.assign(user, updateUserDto);
+    if (updateUserDto.address !== undefined) {
+      user.address = updateUserDto.address;
+    }
 
     const updatedUser = await this.userRepository.save(user);
     const { password, ...userWithoutPassword } = updatedUser;
@@ -61,5 +64,45 @@ export class UserService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     await this.userRepository.remove(user);
+  }
+  async findProviders(pagination: {
+    page: number;
+    limit: number;
+    search?: string;
+  }): Promise<{ data: Partial<User>[]; total: number }> {
+    const { page, limit, search } = pagination;
+
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.firstName',
+        'user.lastName',
+        'user.phoneNumber',
+        'user.address',
+        'user.imageUrl',
+        'user.postalCode',
+        'user.city',
+        'user.email',
+      ])
+      .where('user.role = :role', { role: Role.PROVIDER });
+
+    // Add search functionality if search parameter is provided
+    if (search?.trim()) {
+      queryBuilder.andWhere(
+        "(LOWER(user.firstName) LIKE LOWER(:search) OR LOWER(user.lastName) LIKE LOWER(:search) OR LOWER(CONCAT(user.firstName, ' ', user.lastName)) LIKE LOWER(:search))",
+        { search: `%${search.trim()}%` },
+      );
+    }
+
+    const [result, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      data: result,
+      total,
+    };
   }
 }

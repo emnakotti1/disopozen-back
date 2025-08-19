@@ -22,6 +22,9 @@ export class Service {
   @Column('float')
   price: number;
 
+  @Column({ default: 'TND' })
+  currency: string;
+
   @ManyToOne(() => User, (user) => user.services)
   provider: User;
 
