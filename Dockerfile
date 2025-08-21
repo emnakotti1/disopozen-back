@@ -29,4 +29,4 @@ EXPOSE 3000
 CMD ["node", "dist/src/main.js"]
 
 # Healthcheck (optionnel, mais pratique)
-HEALTHCHECK --interval=10s --timeout=5s --retries=5 CMD curl -f http://localhost:3000/health || exit 1
+HEALTHCHECK --interval=10s --timeout=5s --retries=5 CMD curl -f http://localhost:3000/api/health || exit 1

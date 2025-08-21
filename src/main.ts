@@ -6,10 +6,12 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  app.enableCors({
-    origin: 'http://localhost:5173',
-    credentials: true,
-  });
+  // Allow CORS from configurable origin (Docker: http://localhost)
+  const origin = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
+  app.enableCors({ origin, credentials: true });
+
+  // Consistent API base path for frontend (e.g., /api/users)
+  app.setGlobalPrefix('api');
 
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads/',
